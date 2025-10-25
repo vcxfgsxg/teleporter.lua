@@ -1,0 +1,915 @@
+-- Roblox GUI Teleport Injector
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TextChatService = game:GetService("TextChatService")
+
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- Основной GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TeleportGUI"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Проверяем, существует ли уже GUI, если нет - создаем
+if not player.PlayerGui:FindFirstChild("TeleportGUI") then
+    ScreenGui.Parent = player.PlayerGui
+else
+    ScreenGui = player.PlayerGui.TeleportGUI
+end
+
+-- Главный фрейм
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 400, 0, 550)
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -275)
+MainFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+
+-- Градиент для фрейма
+local Gradient = Instance.new("UIGradient")
+Gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.new(0.1, 0.1, 0.1)),
+    ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))
+})
+Gradient.Rotation = -45
+Gradient.Parent = MainFrame
+
+-- Заголовок с кнопками управления
+local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
+TitleBar.Size = UDim2.new(1, 0, 0, 30)
+TitleBar.BackgroundColor3 = Color3.new(0.05, 0.05, 0.05)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, -90, 1, 0)
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Teleport GUI"
+TitleLabel.TextColor3 = Color3.new(1, 1, 1)
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 14
+TitleLabel.Parent = TitleBar
+
+-- Кнопки управления окном
+local CloseButton = Instance.new("TextButton")
+CloseButton.Name = "CloseButton"
+CloseButton.Size = UDim2.new(0, 30, 1, 0)
+CloseButton.Position = UDim2.new(1, -30, 0, 0)
+CloseButton.BackgroundColor3 = Color3.new(1, 0.2, 0.2)
+CloseButton.BorderSizePixel = 0
+CloseButton.Text = "X"
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 12
+CloseButton.Parent = TitleBar
+
+local MinimizeButton = Instance.new("TextButton")
+MinimizeButton.Name = "MinimizeButton"
+MinimizeButton.Size = UDim2.new(0, 30, 1, 0)
+MinimizeButton.Position = UDim2.new(1, -60, 0, 0)
+MinimizeButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+MinimizeButton.BorderSizePixel = 0
+MinimizeButton.Text = "_"
+MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
+MinimizeButton.Font = Enum.Font.GothamBold
+MinimizeButton.TextSize = 12
+MinimizeButton.Parent = TitleBar
+
+-- Настройки анти-анти-ТП
+local AntiAntiTPSettings = Instance.new("Frame")
+AntiAntiTPSettings.Name = "AntiAntiTPSettings"
+AntiAntiTPSettings.Size = UDim2.new(1, -20, 0, 100)
+AntiAntiTPSettings.Position = UDim2.new(0, 10, 0, 40)
+AntiAntiTPSettings.BackgroundTransparency = 1
+AntiAntiTPSettings.Parent = MainFrame
+
+local AntiAntiTPToggle = Instance.new("TextButton")
+AntiAntiTPToggle.Name = "AntiAntiTPToggle"
+AntiAntiTPToggle.Size = UDim2.new(1, 0, 0, 30)
+AntiAntiTPToggle.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+AntiAntiTPToggle.BorderSizePixel = 0
+AntiAntiTPToggle.Text = "☐ Анти Анти-ТП"
+AntiAntiTPToggle.TextColor3 = Color3.new(1, 1, 1)
+AntiAntiTPToggle.Font = Enum.Font.Gotham
+AntiAntiTPToggle.TextSize = 12
+AntiAntiTPToggle.TextXAlignment = Enum.TextXAlignment.Left
+AntiAntiTPToggle.Parent = AntiAntiTPSettings
+
+local ToggleIndicator = Instance.new("TextLabel")
+ToggleIndicator.Name = "ToggleIndicator"
+ToggleIndicator.Size = UDim2.new(0, 20, 0, 20)
+ToggleIndicator.Position = UDim2.new(1, -25, 0, 5)
+ToggleIndicator.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+ToggleIndicator.BorderSizePixel = 0
+ToggleIndicator.Text = ""
+ToggleIndicator.TextColor3 = Color3.new(1, 1, 1)
+ToggleIndicator.Font = Enum.Font.GothamBold
+ToggleIndicator.TextSize = 12
+ToggleIndicator.Parent = AntiAntiTPToggle
+
+local NoclipToggle = Instance.new("TextButton")
+NoclipToggle.Name = "NoclipToggle"
+NoclipToggle.Size = UDim2.new(0.48, 0, 0, 25)
+NoclipToggle.Position = UDim2.new(0, 0, 0, 40)
+NoclipToggle.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+NoclipToggle.BorderSizePixel = 0
+NoclipToggle.Text = "☐ Ноуклип"
+NoclipToggle.TextColor3 = Color3.new(1, 1, 1)
+NoclipToggle.Font = Enum.Font.Gotham
+NoclipToggle.TextSize = 11
+NoclipToggle.TextXAlignment = Enum.TextXAlignment.Left
+NoclipToggle.Parent = AntiAntiTPSettings
+
+local NoclipIndicator = Instance.new("TextLabel")
+NoclipIndicator.Name = "NoclipIndicator"
+NoclipIndicator.Size = UDim2.new(0, 15, 0, 15)
+NoclipIndicator.Position = UDim2.new(1, -20, 0, 5)
+NoclipIndicator.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+NoclipIndicator.BorderSizePixel = 0
+NoclipIndicator.Text = ""
+NoclipIndicator.TextColor3 = Color3.new(1, 1, 1)
+NoclipIndicator.Font = Enum.Font.GothamBold
+NoclipIndicator.TextSize = 10
+NoclipIndicator.Parent = NoclipToggle
+
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Name = "SpeedLabel"
+SpeedLabel.Size = UDim2.new(0.48, 0, 0, 25)
+SpeedLabel.Position = UDim2.new(0.52, 0, 0, 40)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "Скорость: 0.1"
+SpeedLabel.TextColor3 = Color3.new(1, 1, 1)
+SpeedLabel.Font = Enum.Font.Gotham
+SpeedLabel.TextSize = 11
+SpeedLabel.Parent = AntiAntiTPSettings
+
+local SpeedSlider = Instance.new("TextButton")
+SpeedSlider.Name = "SpeedSlider"
+SpeedSlider.Size = UDim2.new(1, 0, 0, 25)
+SpeedSlider.Position = UDim2.new(0, 0, 0, 70)
+SpeedSlider.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+SpeedSlider.BorderSizePixel = 0
+SpeedSlider.Text = "══════════════"
+SpeedSlider.TextColor3 = Color3.new(0.5, 0.5, 1)
+SpeedSlider.Font = Enum.Font.Gotham
+SpeedSlider.TextSize = 12
+SpeedSlider.Parent = AntiAntiTPSettings
+
+-- Контейнер для кнопок телепортов
+local ButtonsContainer = Instance.new("ScrollingFrame")
+ButtonsContainer.Name = "ButtonsContainer"
+ButtonsContainer.Size = UDim2.new(1, -20, 1, -150)
+ButtonsContainer.Position = UDim2.new(0, 10, 0, 150)
+ButtonsContainer.BackgroundTransparency = 1
+ButtonsContainer.BorderSizePixel = 0
+ButtonsContainer.ScrollBarThickness = 6
+ButtonsContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+ButtonsContainer.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Parent = ButtonsContainer
+
+-- Шестеренка настроек в правом нижнем углу
+local SettingsButton = Instance.new("TextButton")
+SettingsButton.Name = "SettingsButton"
+SettingsButton.Size = UDim2.new(0, 40, 0, 40)
+SettingsButton.Position = UDim2.new(1, -50, 1, -50)
+SettingsButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+SettingsButton.BorderSizePixel = 0
+SettingsButton.Text = "⚙"
+SettingsButton.TextColor3 = Color3.new(1, 1, 1)
+SettingsButton.Font = Enum.Font.GothamBold
+SettingsButton.TextSize = 18
+SettingsButton.ZIndex = 2
+SettingsButton.Parent = ScreenGui
+
+-- Фрейм настроек
+local SettingsFrame = Instance.new("Frame")
+SettingsFrame.Name = "SettingsFrame"
+SettingsFrame.Size = UDim2.new(0, 350, 0, 400)
+SettingsFrame.Position = UDim2.new(1, -400, 1, -450)
+SettingsFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+SettingsFrame.BorderSizePixel = 0
+SettingsFrame.Visible = false
+SettingsFrame.ZIndex = 3
+SettingsFrame.Parent = ScreenGui
+
+local SettingsGradient = Instance.new("UIGradient")
+SettingsGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.new(0.15, 0.15, 0.15)),
+    ColorSequenceKeypoint.new(1, Color3.new(0.05, 0.05, 0.05))
+})
+SettingsGradient.Rotation = -45
+SettingsGradient.Parent = SettingsFrame
+
+local SettingsTitle = Instance.new("TextLabel")
+SettingsTitle.Name = "SettingsTitle"
+SettingsTitle.Size = UDim2.new(1, 0, 0, 40)
+SettingsTitle.BackgroundTransparency = 1
+SettingsTitle.Text = "Создать точку телепорта"
+SettingsTitle.TextColor3 = Color3.new(1, 1, 1)
+SettingsTitle.Font = Enum.Font.GothamBold
+SettingsTitle.TextSize = 16
+SettingsTitle.Parent = SettingsFrame
+
+-- Поля ввода для создания точки
+local NameInput = Instance.new("TextBox")
+NameInput.Name = "NameInput"
+NameInput.Size = UDim2.new(0.9, 0, 0, 30)
+NameInput.Position = UDim2.new(0.05, 0, 0, 60)
+NameInput.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+NameInput.BorderSizePixel = 0
+NameInput.PlaceholderText = "Название точки"
+NameInput.Text = ""
+NameInput.TextColor3 = Color3.new(1, 1, 1)
+NameInput.Font = Enum.Font.Gotham
+NameInput.TextSize = 12
+NameInput.Parent = SettingsFrame
+
+local DescInput = Instance.new("TextBox")
+DescInput.Name = "DescInput"
+DescInput.Size = UDim2.new(0.9, 0, 0, 60)
+DescInput.Position = UDim2.new(0.05, 0, 0, 100)
+DescInput.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+DescInput.BorderSizePixel = 0
+DescInput.PlaceholderText = "Описание точки"
+DescInput.Text = ""
+DescInput.TextColor3 = Color3.new(1, 1, 1)
+DescInput.Font = Enum.Font.Gotham
+DescInput.TextSize = 12
+DescInput.TextYAlignment = Enum.TextYAlignment.Top
+DescInput.Parent = SettingsFrame
+
+local AutoPositionButton = Instance.new("TextButton")
+AutoPositionButton.Name = "AutoPositionButton"
+AutoPositionButton.Size = UDim2.new(0.9, 0, 0, 30)
+AutoPositionButton.Position = UDim2.new(0.05, 0, 0, 170)
+AutoPositionButton.BackgroundColor3 = Color3.new(0.3, 0.5, 0.3)
+AutoPositionButton.BorderSizePixel = 0
+AutoPositionButton.Text = "Авто-позиция (текущая)"
+AutoPositionButton.TextColor3 = Color3.new(1, 1, 1)
+AutoPositionButton.Font = Enum.Font.Gotham
+AutoPositionButton.TextSize = 12
+AutoPositionButton.Parent = SettingsFrame
+
+local PositionInput = Instance.new("TextBox")
+PositionInput.Name = "PositionInput"
+PositionInput.Size = UDim2.new(0.9, 0, 0, 30)
+PositionInput.Position = UDim2.new(0.05, 0, 0, 210)
+PositionInput.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+PositionInput.BorderSizePixel = 0
+PositionInput.PlaceholderText = "Позиция (X, Y, Z) или оставьте пустым для авто"
+PositionInput.Text = ""
+PositionInput.TextColor3 = Color3.new(1, 1, 1)
+PositionInput.Font = Enum.Font.Gotham
+PositionInput.TextSize = 12
+PositionInput.Parent = SettingsFrame
+
+local SavePointButton = Instance.new("TextButton")
+SavePointButton.Name = "SavePointButton"
+SavePointButton.Size = UDim2.new(0.9, 0, 0, 40)
+SavePointButton.Position = UDim2.new(0.05, 0, 0, 250)
+SavePointButton.BackgroundColor3 = Color3.new(0.2, 0.4, 0.8)
+SavePointButton.BorderSizePixel = 0
+SavePointButton.Text = "Сохранить точку"
+SavePointButton.TextColor3 = Color3.new(1, 1, 1)
+SavePointButton.Font = Enum.Font.GothamBold
+SavePointButton.TextSize = 14
+SavePointButton.Parent = SettingsFrame
+
+local DumpButtonsFrame = Instance.new("Frame")
+DumpButtonsFrame.Name = "DumpButtonsFrame"
+DumpButtonsFrame.Size = UDim2.new(0.9, 0, 0, 80)
+DumpButtonsFrame.Position = UDim2.new(0.05, 0, 0, 300)
+DumpButtonsFrame.BackgroundTransparency = 1
+DumpButtonsFrame.Parent = SettingsFrame
+
+local SaveDumpButton = Instance.new("TextButton")
+SaveDumpButton.Name = "SaveDumpButton"
+SaveDumpButton.Size = UDim2.new(1, 0, 0, 35)
+SaveDumpButton.BackgroundColor3 = Color3.new(0.4, 0.6, 0.2)
+SaveDumpButton.BorderSizePixel = 0
+SaveDumpButton.Text = "Сохранить ДАМП"
+SaveDumpButton.TextColor3 = Color3.new(1, 1, 1)
+SaveDumpButton.Font = Enum.Font.Gotham
+SaveDumpButton.TextSize = 12
+SaveDumpButton.Parent = DumpButtonsFrame
+
+local LoadDumpButton = Instance.new("TextButton")
+LoadDumpButton.Name = "LoadDumpButton"
+LoadDumpButton.Size = UDim2.new(1, 0, 0, 35)
+LoadDumpButton.Position = UDim2.new(0, 0, 0, 40)
+LoadDumpButton.BackgroundColor3 = Color3.new(0.6, 0.4, 0.2)
+LoadDumpButton.BorderSizePixel = 0
+LoadDumpButton.Text = "Загрузить ДАМП"
+LoadDumpButton.TextColor3 = Color3.new(1, 1, 1)
+LoadDumpButton.Font = Enum.Font.Gotham
+LoadDumpButton.TextSize = 12
+LoadDumpButton.Parent = DumpButtonsFrame
+
+-- Переменные для функционала
+local teleportPoints = {}
+local isDragging = false
+local dragStartPos = Vector2.new(0, 0)
+local frameStartPos = Vector2.new(0, 0)
+local isMinimized = false
+local originalSize = MainFrame.Size
+
+-- Переменные для анти-анти-ТП
+local antiAntiTPEnabled = false
+local noclipEnabled = false
+local teleportSpeed = 0.1
+local currentTeleportTarget = nil
+local teleportConnection = nil
+local noclipConnection = nil
+
+-- Функция для ноуклипа
+local function enableNoclip()
+    if noclipConnection then
+        noclipConnection:Disconnect()
+    end
+    
+    noclipConnection = RunService.Stepped:Connect(function()
+        if noclipEnabled and player.Character then
+            for _, part in ipairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+end
+
+-- Функция для плавного телепорта
+local function smoothTeleport(targetPosition)
+    if not antiAntiTPEnabled or not currentTeleportTarget then
+        return
+    end
+    
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    
+    local humanoidRootPart = character.HumanoidRootPart
+    local currentPosition = humanoidRootPart.Position
+    local direction = (targetPosition - currentPosition).Unit
+    local distance = (targetPosition - currentPosition).Magnitude
+    
+    -- Если близко к цели, телепортируем сразу
+    if distance < 2 then
+        humanoidRootPart.CFrame = CFrame.new(targetPosition)
+        currentTeleportTarget = nil
+        return
+    end
+    
+    -- Двигаемся небольшими шагами с случайным отклонением
+    local stepDistance = math.min(distance * teleportSpeed, 5)
+    local randomOffset = Vector3.new(
+        (math.random() - 0.5) * 1.0,
+        (math.random() - 0.5) * 0.5,
+        (math.random() - 0.5) * 1.0
+    )
+    
+    local newPosition = currentPosition + (direction * stepDistance) + randomOffset
+    humanoidRootPart.CFrame = CFrame.new(newPosition)
+end
+
+-- Функция для запуска плавного телепорта
+local function startSmoothTeleport(targetPosition)
+    currentTeleportTarget = targetPosition
+    
+    if teleportConnection then
+        teleportConnection:Disconnect()
+    end
+    
+    teleportConnection = RunService.Heartbeat:Connect(function()
+        if currentTeleportTarget and antiAntiTPEnabled then
+            smoothTeleport(currentTeleportTarget)
+        else
+            teleportConnection:Disconnect()
+        end
+    end)
+end
+
+-- Функция для создания кнопки телепорта
+local function createTeleportButton(pointData)
+    local button = Instance.new("TextButton")
+    button.Name = "TPButton_" .. pointData.id
+    button.Size = UDim2.new(1, 0, 0, 60)
+    button.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+    button.BorderSizePixel = 0
+    button.AutoButtonColor = false
+    
+    local buttonGradient = Instance.new("UIGradient")
+    buttonGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(0.25, 0.25, 0.25)),
+        ColorSequenceKeypoint.new(1, Color3.new(0.1, 0.1, 0.1))
+    })
+    buttonGradient.Parent = button
+    
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.Size = UDim2.new(1, -10, 0, 20)
+    nameLabel.Position = UDim2.new(0, 5, 0, 5)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = pointData.name
+    nameLabel.TextColor3 = Color3.new(1, 1, 1)
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextSize = 14
+    nameLabel.Parent = button
+    
+    local descLabel = Instance.new("TextLabel")
+    descLabel.Name = "DescLabel"
+    descLabel.Size = UDim2.new(1, -10, 0, 30)
+    descLabel.Position = UDim2.new(0, 5, 0, 25)
+    descLabel.BackgroundTransparency = 1
+    descLabel.Text = pointData.description
+    descLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    descLabel.TextXAlignment = Enum.TextXAlignment.Left
+    descLabel.Font = Enum.Font.Gotham
+    descLabel.TextSize = 11
+    descLabel.TextWrapped = true
+    descLabel.Parent = button
+    
+    local posLabel = Instance.new("TextLabel")
+    posLabel.Name = "PosLabel"
+    posLabel.Size = UDim2.new(1, -10, 0, 15)
+    posLabel.Position = UDim2.new(0, 5, 1, -20)
+    posLabel.BackgroundTransparency = 1
+    posLabel.Text = string.format("X:%.1f Y:%.1f Z:%.1f", pointData.position.X, pointData.position.Y, pointData.position.Z)
+    posLabel.TextColor3 = Color3.new(0.6, 0.6, 0.6)
+    posLabel.TextXAlignment = Enum.TextXAlignment.Left
+    posLabel.Font = Enum.Font.Gotham
+    posLabel.TextSize = 10
+    posLabel.Parent = button
+    
+    -- Анимация при наведении
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.new(0.25, 0.25, 0.25)}):Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)}):Play()
+    end)
+    
+    -- Телепорт при клике
+    button.MouseButton1Click:Connect(function()
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            if antiAntiTPEnabled then
+                startSmoothTeleport(pointData.position)
+            else
+                character.HumanoidRootPart.CFrame = CFrame.new(pointData.position)
+            end
+        end
+    end)
+    
+    button.Parent = ButtonsContainer
+    
+    -- Обновляем размер контейнера
+    ButtonsContainer.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y)
+end
+
+-- Функция для сохранения точки
+local function saveTeleportPoint()
+    local name = NameInput.Text:gsub("^%s*(.-)%s*$", "%1")
+    local description = DescInput.Text:gsub("^%s*(.-)%s*$", "%1")
+    local positionText = PositionInput.Text:gsub("^%s*(.-)%s*$", "%1")
+    
+    if name == "" then
+        NameInput.PlaceholderText = "Введите название!"
+        NameInput.PlaceholderColor3 = Color3.new(1, 0.3, 0.3)
+        return
+    end
+    
+    local position
+    if positionText == "" then
+        -- Автоматическая позиция
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            position = character.HumanoidRootPart.Position
+        else
+            position = Vector3.new(0, 0, 0)
+        end
+    else
+        -- Парсинг ручной позиции
+        local x, y, z = positionText:match("([%d%.%-]+)%s*,%s*([%d%.%-]+)%s*,%s*([%d%.%-]+)")
+        if x and y and z then
+            position = Vector3.new(tonumber(x), tonumber(y), tonumber(z))
+        else
+            PositionInput.Text = ""
+            PositionInput.PlaceholderText = "Неверный формат!"
+            PositionInput.PlaceholderColor3 = Color3.new(1, 0.3, 0.3)
+            return
+        end
+    end
+    
+    local pointData = {
+        id = #teleportPoints + 1,
+        name = name,
+        description = description,
+        position = position
+    }
+    
+    table.insert(teleportPoints, pointData)
+    createTeleportButton(pointData)
+    
+    -- Очищаем поля
+    NameInput.Text = ""
+    DescInput.Text = ""
+    PositionInput.Text = ""
+    NameInput.PlaceholderColor3 = Color3.new(0.5, 0.5, 0.5)
+    PositionInput.PlaceholderColor3 = Color3.new(0.5, 0.5, 0.5)
+end
+
+-- Функция для создания дампа точек
+local function createPointsDump()
+    local dumpText = "[Points of TP] =\n"
+    
+    for i, point in ipairs(teleportPoints) do
+        dumpText = dumpText .. string.format(
+            "[%d] --- [%s] --- [%s] --- [%s] ----- Position settings [%d]\n",
+            i,
+            point.name,
+            point.description,
+            string.format("%.2f, %.2f, %.2f", point.position.X, point.position.Y, point.position.Z),
+            i
+        )
+    end
+    
+    return dumpText
+end
+
+-- Функция для сохранения дампа в буфер обмена
+local function saveDumpToClipboard()
+    local dumpText = createPointsDump()
+    
+    -- Создаем фрейм для отображения дампа
+    local dumpFrame = Instance.new("Frame")
+    dumpFrame.Name = "DumpFrame"
+    dumpFrame.Size = UDim2.new(0, 600, 0, 500)
+    dumpFrame.Position = UDim2.new(0.5, -300, 0.5, -250)
+    dumpFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+    dumpFrame.BorderSizePixel = 0
+    dumpFrame.ZIndex = 4
+    dumpFrame.Parent = ScreenGui
+    
+    local dumpGradient = Instance.new("UIGradient")
+    dumpGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(0.2, 0.2, 0.2)),
+        ColorSequenceKeypoint.new(1, Color3.new(0.1, 0.1, 0.1))
+    })
+    dumpGradient.Parent = dumpFrame
+    
+    local dumpTitle = Instance.new("TextLabel")
+    dumpTitle.Name = "DumpTitle"
+    dumpTitle.Size = UDim2.new(1, 0, 0, 40)
+    dumpTitle.BackgroundTransparency = 1
+    dumpTitle.Text = "ДАМП точек телепорта - Выделите и скопируйте текст"
+    dumpTitle.TextColor3 = Color3.new(1, 1, 1)
+    dumpTitle.Font = Enum.Font.GothamBold
+    dumpTitle.TextSize = 16
+    dumpTitle.Parent = dumpFrame
+    
+    -- Текстовое поле только для чтения
+    local dumpTextBox = Instance.new("TextBox")
+    dumpTextBox.Name = "DumpTextBox"
+    dumpTextBox.Size = UDim2.new(0.94, 0, 0.75, 0)
+    dumpTextBox.Position = UDim2.new(0.03, 0, 0.1, 0)
+    dumpTextBox.BackgroundColor3 = Color3.new(0.05, 0.05, 0.05)
+    dumpTextBox.BorderSizePixel = 0
+    dumpTextBox.Text = dumpText
+    dumpTextBox.TextColor3 = Color3.new(1, 1, 1)
+    dumpTextBox.Font = Enum.Font.Code
+    dumpTextBox.TextSize = 11
+    dumpTextBox.TextWrapped = true
+    dumpTextBox.TextXAlignment = Enum.TextXAlignment.Left
+    dumpTextBox.TextYAlignment = Enum.TextYAlignment.Top
+    dumpTextBox.MultiLine = true
+    dumpTextBox.ClearTextOnFocus = false
+    dumpTextBox.TextEditable = false
+    dumpTextBox.Parent = dumpFrame
+    
+    local closeDumpButton = Instance.new("TextButton")
+    closeDumpButton.Name = "CloseDumpButton"
+    closeDumpButton.Size = UDim2.new(0.94, 0, 0, 40)
+    closeDumpButton.Position = UDim2.new(0.03, 0, 0.87, 0)
+    closeDumpButton.BackgroundColor3 = Color3.new(0.8, 0.2, 0.2)
+    closeDumpButton.BorderSizePixel = 0
+    closeDumpButton.Text = "Закрыть"
+    closeDumpButton.TextColor3 = Color3.new(1, 1, 1)
+    closeDumpButton.Font = Enum.Font.GothamBold
+    closeDumpButton.TextSize = 14
+    closeDumpButton.Parent = dumpFrame
+    
+    closeDumpButton.MouseButton1Click:Connect(function()
+        dumpFrame:Destroy()
+    end)
+end
+
+-- Функция для загрузки дампа
+local function loadDumpFromText(dumpText)
+    -- Очищаем текущие точки
+    for i = #teleportPoints, 1, -1 do
+        table.remove(teleportPoints, i)
+    end
+    
+    -- Очищаем контейнер кнопок
+    for _, child in ipairs(ButtonsContainer:GetChildren()) do
+        if child:IsA("TextButton") and child.Name:match("TPButton_") then
+            child:Destroy()
+        end
+    end
+    
+    -- Парсим дамп
+    local loadedPoints = 0
+    for line in dumpText:gmatch("[^\r\n]+") do
+        if line:match("%[%d+%] %-%-%- %[.*%] %-%-%- %[.*%] %-%-%- %[.*%] %-%-%-%-%- Position settings %[%d+%]") then
+            local number, name, desc, pos = line:match("%[(%d+)%] %-%-%- %[(.*)%] %-%-%- %[(.*)%] %-%-%- %[(.*)%] %-%-%-%-%- Position settings %[%d+%]")
+            if number and name and desc and pos then
+                local x, y, z = pos:match("([%d%.%-]+)%s*,%s*([%d%.%-]+)%s*,%s*([%d%.%-]+)")
+                if x and y and z then
+                    local pointData = {
+                        id = #teleportPoints + 1,
+                        name = name,
+                        description = desc,
+                        position = Vector3.new(tonumber(x), tonumber(y), tonumber(z))
+                    }
+                    table.insert(teleportPoints, pointData)
+                    createTeleportButton(pointData)
+                    loadedPoints = loadedPoints + 1
+                end
+            end
+        end
+    end
+    
+    return loadedPoints
+end
+
+-- Функция для загрузки дампа из текста
+local function showLoadDumpDialog()
+    local loadFrame = Instance.new("Frame")
+    loadFrame.Name = "LoadFrame"
+    loadFrame.Size = UDim2.new(0, 600, 0, 500)
+    loadFrame.Position = UDim2.new(0.5, -300, 0.5, -250)
+    loadFrame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+    loadFrame.BorderSizePixel = 0
+    loadFrame.ZIndex = 4
+    loadFrame.Parent = ScreenGui
+    
+    local loadGradient = Instance.new("UIGradient")
+    loadGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(0.2, 0.2, 0.2)),
+        ColorSequenceKeypoint.new(1, Color3.new(0.1, 0.1, 0.1))
+    })
+    loadGradient.Parent = loadFrame
+    
+    local loadTitle = Instance.new("TextLabel")
+    loadTitle.Name = "LoadTitle"
+    loadTitle.Size = UDim2.new(1, 0, 0, 40)
+    loadTitle.BackgroundTransparency = 1
+    loadTitle.Text = "Загрузить ДАМП - Вставьте текст дампа"
+    loadTitle.TextColor3 = Color3.new(1, 1, 1)
+    loadTitle.Font = Enum.Font.GothamBold
+    loadTitle.TextSize = 16
+    loadTitle.Parent = loadFrame
+    
+    -- Текстовое поле для ввода дампа
+    local loadTextBox = Instance.new("TextBox")
+    loadTextBox.Name = "LoadTextBox"
+    loadTextBox.Size = UDim2.new(0.94, 0, 0.65, 0)
+    loadTextBox.Position = UDim2.new(0.03, 0, 0.1, 0)
+    loadTextBox.BackgroundColor3 = Color3.new(0.05, 0.05, 0.05)
+    loadTextBox.BorderSizePixel = 0
+    loadTextBox.PlaceholderText = "Вставьте сюда текст дампа..."
+    loadTextBox.Text = ""
+    loadTextBox.TextColor3 = Color3.new(1, 1, 1)
+    loadTextBox.Font = Enum.Font.Code
+    loadTextBox.TextSize = 11
+    loadTextBox.TextWrapped = true
+    loadTextBox.TextXAlignment = Enum.TextXAlignment.Left
+    loadTextBox.TextYAlignment = Enum.TextYAlignment.Top
+    loadTextBox.MultiLine = true
+    loadTextBox.Parent = loadFrame
+    
+    local loadButton = Instance.new("TextButton")
+    loadButton.Name = "LoadButton"
+    loadButton.Size = UDim2.new(0.94, 0, 0, 40)
+    loadButton.Position = UDim2.new(0.03, 0, 0.77, 0)
+    loadButton.BackgroundColor3 = Color3.new(0.2, 0.6, 0.2)
+    loadButton.BorderSizePixel = 0
+    loadButton.Text = "Загрузить точки"
+    loadButton.TextColor3 = Color3.new(1, 1, 1)
+    loadButton.Font = Enum.Font.GothamBold
+    loadButton.TextSize = 14
+    loadButton.Parent = loadFrame
+    
+    local closeLoadButton = Instance.new("TextButton")
+    closeLoadButton.Name = "CloseLoadButton"
+    closeLoadButton.Size = UDim2.new(0.94, 0, 0, 40)
+    closeLoadButton.Position = UDim2.new(0.03, 0, 0.87, 0)
+    closeLoadButton.BackgroundColor3 = Color3.new(0.8, 0.2, 0.2)
+    closeLoadButton.BorderSizePixel = 0
+    closeLoadButton.Text = "Закрыть"
+    closeLoadButton.TextColor3 = Color3.new(1, 1, 1)
+    closeLoadButton.Font = Enum.Font.GothamBold
+    closeLoadButton.TextSize = 14
+    closeLoadButton.Parent = loadFrame
+    
+    loadButton.MouseButton1Click:Connect(function()
+        local loadedCount = loadDumpFromText(loadTextBox.Text)
+        if loadedCount > 0 then
+            loadButton.Text = "Успешно загружено: " .. loadedCount
+            loadButton.BackgroundColor3 = Color3.new(0.2, 0.8, 0.2)
+            wait(2)
+        end
+        loadFrame:Destroy()
+    end)
+    
+    closeLoadButton.MouseButton1Click:Connect(function()
+        loadFrame:Destroy()
+    end)
+end
+
+-- Функции для управления видимостью GUI
+local function showGUI()
+    ScreenGui.Enabled = true
+    MainFrame.Visible = true
+    SettingsButton.Visible = true
+end
+
+local function hideGUI()
+    ScreenGui.Enabled = false
+    MainFrame.Visible = false
+    SettingsButton.Visible = false
+end
+
+-- Обработчик чат-команд
+local function onChatMessage(message)
+    if message == "/open" then
+        showGUI()
+    elseif message == "/exit" then
+        hideGUI()
+    end
+end
+
+-- Подключаем обработчик чата
+if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+    -- Новый чат
+    local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+    if channel then
+        channel.OnIncomingMessage = function(message)
+            if message.TextSource then
+                local text = string.lower(message.Text)
+                onChatMessage(text)
+            end
+        end
+    end
+else
+end
+
+-- Обработчики событий
+-- Перетаскивание окна
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        dragStartPos = Vector2.new(input.Position.X, input.Position.Y)
+        frameStartPos = Vector2.new(MainFrame.Position.X.Offset, MainFrame.Position.Y.Offset)
+    end
+end)
+
+TitleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = Vector2.new(input.Position.X, input.Position.Y) - dragStartPos
+        MainFrame.Position = UDim2.new(0, frameStartPos.X + delta.X, 0, frameStartPos.Y + delta.Y)
+    end
+end)
+
+-- Закрытие окна
+CloseButton.MouseButton1Click:Connect(function()
+    hideGUI()
+end)
+
+-- Сворачивание/разворачивание
+MinimizeButton.MouseButton1Click:Connect(function()
+    if isMinimized then
+        MainFrame.Size = originalSize
+        ButtonsContainer.Visible = true
+        AntiAntiTPSettings.Visible = true
+        isMinimized = false
+    else
+        MainFrame.Size = UDim2.new(0, 400, 0, 70)
+        ButtonsContainer.Visible = false
+        AntiAntiTPSettings.Visible = false
+        isMinimized = true
+    end
+end)
+
+-- Открытие/закрытие настроек
+SettingsButton.MouseButton1Click:Connect(function()
+    SettingsFrame.Visible = not SettingsFrame.Visible
+end)
+
+-- Авто-позиция
+AutoPositionButton.MouseButton1Click:Connect(function()
+    local character = player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local pos = character.HumanoidRootPart.Position
+        PositionInput.Text = string.format("%.2f, %.2f, %.2f", pos.X, pos.Y, pos.Z)
+    end
+end)
+
+-- Сохранение точки
+SavePointButton.MouseButton1Click:Connect(saveTeleportPoint)
+
+-- Сохранение дампа
+SaveDumpButton.MouseButton1Click:Connect(saveDumpToClipboard)
+
+-- Загрузка дампа
+LoadDumpButton.MouseButton1Click:Connect(showLoadDumpDialog)
+
+-- Анти-анти-ТП переключатель
+AntiAntiTPToggle.MouseButton1Click:Connect(function()
+    antiAntiTPEnabled = not antiAntiTPEnabled
+    if antiAntiTPEnabled then
+        ToggleIndicator.BackgroundColor3 = Color3.new(0.2, 0.8, 0.2)
+        AntiAntiTPToggle.Text = "☑ Анти Анти-ТП"
+    else
+        ToggleIndicator.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        AntiAntiTPToggle.Text = "☐ Анти Анти-ТП"
+        currentTeleportTarget = nil
+        if teleportConnection then
+            teleportConnection:Disconnect()
+        end
+    end
+end)
+
+-- Ноуклип переключатель
+NoclipToggle.MouseButton1Click:Connect(function()
+    noclipEnabled = not noclipEnabled
+    if noclipEnabled then
+        NoclipIndicator.BackgroundColor3 = Color3.new(0.2, 0.8, 0.2)
+        NoclipToggle.Text = "☑ Ноуклип"
+        enableNoclip()
+    else
+        NoclipIndicator.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+        NoclipToggle.Text = "☐ Ноуклип"
+        if noclipConnection then
+            noclipConnection:Disconnect()
+        end
+    end
+end)
+
+-- Настройка скорости телепорта
+SpeedSlider.MouseButton1Click:Connect(function()
+    teleportSpeed = teleportSpeed + 0.1
+    if teleportSpeed > 1 then
+        teleportSpeed = 0.1
+    end
+    SpeedLabel.Text = "Скорость: " .. string.format("%.1f", teleportSpeed)
+end)
+
+-- Добавляем несколько тестовых точек
+local testPoints = {
+    {
+        id = 1,
+        name = "Спавн",
+        description = "Начальная точка появления",
+        position = Vector3.new(0, 10, 0)
+    },
+    {
+        id = 2,
+        name = "Высокая точка",
+        description = "Обзорная площадка",
+        position = Vector3.new(50, 100, 50)
+    }
+}
+
+for _, point in ipairs(testPoints) do
+    table.insert(teleportPoints, point)
+    createTeleportButton(point)
+end
+
+print("Teleport GUI успешно загружен!")
+print("Команды чата: /open - показать GUI, /exit - скрыть GUI")
+print("Анти-анти-ТП: плавный телепорт с обходом защиты")
+
+
